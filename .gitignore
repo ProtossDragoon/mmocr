@@ -129,6 +129,7 @@ tests/results
 
 #temp files
 .DS_Store
+nohup.out
 
 checkpoints
 
@@ -142,3 +143,5 @@ mmocr/.mim
 workdirs/
 .history/
 .dev/
+
+artifacts/
