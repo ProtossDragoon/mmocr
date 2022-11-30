@@ -1,0 +1,4 @@
+[default]
+entity = ai-solution-lab
+project = mmocr
+base_url = https://api.wandb.ai

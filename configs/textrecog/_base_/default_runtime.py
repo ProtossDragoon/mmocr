@@ -21,9 +21,15 @@ default_hooks = dict(
         draw_gt=False,
         draw_pred=False),
 )
+
 # Logging
 log_level = 'INFO'
 log_processor = dict(type='LogProcessor', window_size=10, by_epoch=True)
+log_config = dict(hooks=[
+    dict(
+        type='WandbLoggerHook',
+        init_kwargs=dict(project='mmocr', entity='ai-solution-lab')),
+])
 
 load_from = None
 resume = False
@@ -41,8 +47,9 @@ val_evaluator = dict(
 test_evaluator = val_evaluator
 
 # Visualization
-vis_backends = [dict(type='LocalVisBackend')]
+vis_backends = [dict(type='LocalVisBackend'), dict(type='WandbVisBackend')]
 visualizer = dict(
     type='TextRecogLocalVisualizer',
     name='visualizer',
+    font_families='NanumGothic',
     vis_backends=vis_backends)
