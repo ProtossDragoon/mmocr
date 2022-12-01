@@ -15,6 +15,7 @@ def parse_args():
         'data_type',
         choices=['aihub_finance', 'aihub_transit'],
         action='append')
+    parser.add_argument('--resize-json', action='store_true', default=False)
     parser.add_argument('--logfile_path', default='e2e.log', type=str)
     args = parser.parse_args()
     return args
@@ -91,6 +92,10 @@ class Copy4E2EF1(ValidateAihubData):
     def dst_icdar_pred(self):
         return self._assert_exists(f'{self.copy_dst_root}/preds')
 
+    @property
+    def dst_pred_vis(self):
+        return self._assert_exists(f'{self.copy_dst_root}/vis')
+
     def _assert_exists(self, path):
         if not os.path.exists(path):
             self.logger.warning(f'`{path}` 경로가 존재하지 않아 새로운 디렉토리를 생성합니다.')
@@ -164,21 +169,21 @@ class Copy4E2EF1(ValidateAihubData):
 def main():
     args = parse_args()
     log.set_default_logger(level='INFO', logfile_path=args.logfile_path)
-
+    label_scale = 0.5 if args.resize_json else 1.0
     if 'aihub_finance' in args.data_type:
         print('\n=== Aihub 금융 테스트용 데이터 ===')
         finance_data = Copy4E2EF1(data_type='aihub_finance')
         li = finance_data.get_impaths()
         finance_data.to_dst(li, entity='raw_img')
         finance_data.gather_gt(li)
-        finance_data.convert_gathered_json_to_icdar_gt(label_scale=0.5)
+        finance_data.convert_gathered_json_to_icdar_gt(label_scale=label_scale)
     if 'aihub_transit' in args.data_type:
         print('\n=== Aihub 물류 테스트용 데이터 ===')
         transit_data = Copy4E2EF1(data_type='aihub_transit')
         li = transit_data.get_impaths()
         transit_data.to_dst(li, entity='raw_img')
         transit_data.gather_gt(li)
-        transit_data.convert_gathered_json_to_icdar_gt(label_scale=0.5)
+        transit_data.convert_gathered_json_to_icdar_gt(label_scale=label_scale)
 
 
 if __name__ == '__main__':
