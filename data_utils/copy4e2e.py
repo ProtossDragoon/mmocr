@@ -33,9 +33,6 @@ class ValidateAihubData:
         self.impath_root = f'data/det/{self.data_type}/part_100of100/{split_type}'  # noqa E501
         self.logger = logging.getLogger(self.__class__.__name__)
 
-        assert os.path.isdir(self.impath_root), (
-            f'이미지 경로가 존재하지 않습니다. 현재 경로: {self.impath_root}')
-
     def _get_impath_iterator(self, impath_key: str = 'img_path'):
         p = f'{self.json_root}/textdet_test.json'
         with open(p, 'r') as f:
@@ -169,20 +166,22 @@ class Copy4E2EF1(ValidateAihubData):
 def main():
     args = parse_args()
     log.set_default_logger(level='INFO', logfile_path=args.logfile_path)
+    logger = logging.getLogger('copy4e2e')
+
     label_scale = 0.5 if args.resize_json else 1.0
     if 'aihub_finance' in args.data_type:
-        print('\n=== Aihub 금융 테스트용 데이터 ===')
+        logger.info('\n=== 모델 평가를 위한 Aihub 금융 데이터를 전처리 ===')
         finance_data = Copy4E2EF1(data_type='aihub_finance')
-        li = finance_data.get_impaths()
-        finance_data.to_dst(li, entity='raw_img')
-        finance_data.gather_gt(li)
+        # li = finance_data.get_impaths()
+        # finance_data.to_dst(li, entity='raw_img')
+        # finance_data.gather_gt(li)
         finance_data.convert_gathered_json_to_icdar_gt(label_scale=label_scale)
     if 'aihub_transit' in args.data_type:
-        print('\n=== Aihub 물류 테스트용 데이터 ===')
+        logger.info('\n=== 모델 평가를 위한 Aihub 물류 데이터를 전처리 ===')
         transit_data = Copy4E2EF1(data_type='aihub_transit')
-        li = transit_data.get_impaths()
-        transit_data.to_dst(li, entity='raw_img')
-        transit_data.gather_gt(li)
+        # li = transit_data.get_impaths()
+        # transit_data.to_dst(li, entity='raw_img')
+        # transit_data.gather_gt(li)
         transit_data.convert_gathered_json_to_icdar_gt(label_scale=label_scale)
 
 
