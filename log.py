@@ -26,6 +26,24 @@ class CustomFormatter(logging.Formatter):
         return formatter.format(record)
 
 
+class FileOutputFormatter(logging.Formatter):
+
+    format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+
+    FORMATS = {
+        logging.DEBUG: format,
+        logging.INFO: format,
+        logging.WARNING: format,
+        logging.ERROR: format,
+        logging.CRITICAL: format
+    }
+
+    def format(self, record):
+        log_fmt = self.FORMATS.get(record.levelno)
+        formatter = logging.Formatter(log_fmt)
+        return formatter.format(record)
+
+
 def set_default_logger(level=logging.INFO, logfile_path='e2e.log'):
     logger = logging.getLogger()
     logger.setLevel(level=level)
@@ -36,5 +54,5 @@ def set_default_logger(level=logging.INFO, logfile_path='e2e.log'):
 
     fileHandler = logging.FileHandler(
         filename=logfile_path, encoding='utf-8-sig')
-    fileHandler.setFormatter(CustomFormatter())
+    fileHandler.setFormatter(FileOutputFormatter())
     logger.addHandler(fileHandler)
