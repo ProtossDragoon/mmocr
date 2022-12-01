@@ -19,6 +19,7 @@ def parse_args():
         'data_type',
         choices=['aihub_finance', 'aihub_transit'],
         action='append')
+    parser.add_argument('--debug', action='store_true')
     parser.add_argument('--logfile_path', default='e2e.log', type=str)
     args = parser.parse_args()
     return args
@@ -32,8 +33,8 @@ def get_model_config(model_name: str) -> Dict:
     f_sar_confname = 'sar_resnet31_parallel-decoder_500e_aihubfinance1of100_pretrained'  # noqa E501
     t_sar_confname = 'sar_resnet31_parallel-decoder_100e_aihubtransit1of100_pretrained'  # noqa E501
     satrn_base = 'configs/textrecog/satrn'
-    f_satrn_confname = 'satrn_shallow-small_150e_aihubfinance1of100_pretrained'
-    t_satrn_confname = 'satrn_shallow-small_30e_aihubtransit1of100_pretrained'
+    f_satrn_confname = 'satrn_shallow_5e_aihubfinance10of100_pretrained_lrtune'
+    t_satrn_confname = 'satrn_shallow_5e_aihubtransit1of100_pretrained_lrtune'
     model_dict = {
         # Detection models
         'AihubFinance_DBNet': {
@@ -54,15 +55,14 @@ def get_model_config(model_name: str) -> Dict:
             'recog_config': f'{sar_base}/{t_sar_confname}.py',
             'recog_ckpt': f'pretrained/{t_sar_confname}_stilted-grass-112.pth',
         },
-        'AihubFinance_SATRN_sm': {
+        'AihubFinance_SATRN': {
             'recog_config': f'{satrn_base}/{f_satrn_confname}.py',
-            'recog_ckpt':
-            f'pretrained/{f_satrn_confname}_proud-resonance-129.pth',
+            'recog_ckpt': f'pretrained/{f_satrn_confname}_peachy-sun-152.pth',
         },
-        'AihubTransit_SATRN_sm': {
+        'AihubTransit_SATRN': {
             'recog_config': f'{satrn_base}/{t_satrn_confname}.py',
             'recog_ckpt':
-            f'pretrained/{t_satrn_confname}_driven-planet-130.pth',
+            f'pretrained/{t_satrn_confname}_desert-sunset-150.pth'
         },
     }
     if model_name not in model_dict:
@@ -97,15 +97,27 @@ def main():
     if 'aihub_finance' in args.data_type:
         logger.info('\n=== Aihub 금융 모델 로드 ===')
         kwargs = get_model_config('AihubFinance_DBNet')
-        kwargs.update(get_model_config('AihubFinance_SATRN_sm'))
+        kwargs.update(get_model_config('AihubFinance_SATRN'))
+        if args.debug:
+            n = 10
+            logger.info(f'디버그 모드로 실행합니다. CPU 를 사용합니다. '
+                        f'{n}개의 이미지만 처리 및 시각화합니다.')
+            kwargs.update({'device': 'cpu'})
         ocr = MMOCR(**kwargs)
         logger.info('\n=== Aihub 금융 모델 추론 시작 ===')
         finance = Copy4E2EF1('aihub_finance')
-        imgs = glob.glob(os.path.join(finance.dst_raw_img, '*.png'))
+        imgs = sorted(glob.glob(os.path.join(finance.dst_raw_img, '*.png')))
         for i, p in enumerate(tqdm.tqdm(imgs)):
+            if args.debug:
+                logger.info(f'img_file_name:\t {p}')
+                if i == n:
+                    break
             pkl_path = f'work_dirs/aihub_finance/{get_fname(p)}.pkl'
+            kwargs = {'img': p, 'pred_out_file': pkl_path}
+            if args.debug:
+                kwargs.update({'img_out_dir': finance.dst_pred_vis})
             try:
-                ocr.readtext(img=p, pred_out_file=pkl_path)
+                ocr.readtext(**kwargs)
             except IndexError:
                 logger.warning(f'추론값이 비어 있는 이미지입니다: {p}')
                 write_empty_json(pkl_path.replace('.pkl', '.json'))
@@ -116,15 +128,27 @@ def main():
     if 'aihub_transit' in args.data_type:
         logger.info('\n=== Aihub 물류 모델 로드 ===')
         kwargs = get_model_config('AihubTransit_DBNet')
-        kwargs.update(get_model_config('AihubTransit_SATRN_sm'))
+        kwargs.update(get_model_config('AihubTransit_SATRN'))
+        if args.debug:
+            n = 10
+            logger.info(f'디버그 모드로 실행합니다. CPU 를 사용합니다. '
+                        f'{n}개의 이미지만 처리 및 시각화합니다.')
+            kwargs.update({'device': 'cpu'})
         ocr = MMOCR(**kwargs)
         logger.info('\n=== Aihub 물류 모델 추론 시작 ===')
         transit = Copy4E2EF1('aihub_transit')
-        imgs = glob.glob(os.path.join(transit.dst_raw_img, '*.png'))
+        imgs = sorted(glob.glob(os.path.join(transit.dst_raw_img, '*.png')))
         for i, p in enumerate(tqdm.tqdm(imgs)):
+            if args.debug:
+                logger.info(f'img_file_name:\t {p}')
+                if i == n:
+                    break
             pkl_path = f'work_dirs/aihub_transit/{get_fname(p)}.pkl'
+            kwargs = {'img': p, 'pred_out_file': pkl_path}
+            if args.debug:
+                kwargs.update({'img_out_dir': transit.dst_pred_vis})
             try:
-                ocr.readtext(img=p, pred_out_file=pkl_path)
+                ocr.readtext(**kwargs)
             except IndexError:
                 logger.warning(f'추론값이 비어 있는 이미지입니다: {p}')
                 write_empty_json(pkl_path.replace('.pkl', '.json'))
